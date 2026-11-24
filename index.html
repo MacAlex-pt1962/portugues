@@ -39,7 +39,7 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 </head>
 <body><main>
 <h1>Урок 1. Скелет языка</h1>
-<p class="muted" style="margin:0">Версия 1.5 · 24.11.2026</p>
+<p class="muted" style="margin:0">Версия 1.6 · 24.11.2026</p>
 <p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
 <nav id="nav">
 <button data-t="today">📅 Сегодня</button>
@@ -135,6 +135,8 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 <div><label>Регион Azure</label><input id="r_azure" value="northeurope"></div>
 <div><label>Google Gemini API key</label><input id="k_gemini" type="password" autocomplete="off"></div>
 <div><label>Модель Gemini (пусто = выбрать автоматически)</label><input id="m_gemini" placeholder="авто"></div>
+<div><label>OpenAI API key (основной учитель, если указан)</label><input id="k_openai" type="password" autocomplete="off"></div>
+<div><label>Модель OpenAI (пусто = автоматически)</label><input id="m_openai" placeholder="авто"></div>
 </div>
 <button class="b" id="sSave">Сохранить</button>
 <button class="b s" id="sTest">Проверить соединение</button>
@@ -218,7 +220,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const KEYS=["k_azure","r_azure","k_gemini","m_gemini"];
+const KEYS=["k_azure","r_azure","k_gemini","m_gemini","k_openai","m_openai"];
 function loadKeys(){KEYS.forEach(k=>{let v;try{v=localStorage.getItem("ptt_"+k)}catch(e){};if(v)$(k).value=v})}
 function saveKeys(){KEYS.forEach(k=>{try{localStorage.setItem("ptt_"+k,$(k).value.trim())}catch(e){}})}
 const key=id=>$(id).value.trim();
@@ -227,7 +229,7 @@ const key=id=>$(id).value.trim();
 function month(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)}
 function useAdd(kind,n){const u=LS.get("pl_usage",{});if(u.m!==month()){u.m=month();u.stt=0;u.tts=0}u[kind]=(u[kind]||0)+n;LS.set("pl_usage",u);showUsage()}
 function showUsage(){const u=LS.get("pl_usage",{});const ok=u.m===month();const stt=ok?(u.stt||0):0,tts=ok?(u.tts||0):0;
- $("usage").innerHTML=`Распознавание речи Azure: <b>${(stt/60).toFixed(1)} мин</b> из 300 мин (5 часов) бесплатно<br>Озвучка Azure: <b>${tts.toLocaleString("ru")}</b> символов из 500 000 бесплатно<br><span class="muted">Озвученные фразы сохраняются и повторно лимит не тратят. Если ключ Azure используют несколько человек, общий расход больше.</span>`}
+ $("usage").innerHTML=`Распознавание речи Azure: <b>${(stt/60).toFixed(1)} мин</b> из 300 мин (5 часов) бесплатно<br>Озвучка Azure: <b>${tts.toLocaleString("ru")}</b> символов из 500 000 бесплатно<br>${(()=>{const o=LS.get("pl_oacost",{});return o.m===month()&&o.n?`Учитель OpenAI: <b>${o.n}</b> ответов, примерно <b>$${o.usd.toFixed(3)}</b><br>`:""})()}<span class="muted">Озвученные фразы сохраняются и повторно лимит не тратят. Если ключ Azure используют несколько человек, общий расход больше.</span>`}
 
 /* кэш аудио в IndexedDB */
 const DB={open(){return new Promise((res,rej)=>{const q=indexedDB.open("pl_audio",1);q.onupgradeneeded=()=>q.result.createObjectStore("a");q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
@@ -474,10 +476,59 @@ async function gemini(userText,status){
  chat.pop();
  throw new Error("Учитель сейчас недоступен: "+lastErr+". Подождите минуту и нажмите «Повторить».");
 }
+/* ===================== OPENAI: УЧИТЕЛЬ ===================== */
+const OA_PREF=["gpt-6-luna","gpt-5.6-luna","gpt-5-mini","gpt-5.4-nano","gpt-5-nano","gpt-4.1-mini","gpt-4o-mini"];
+const OA_PRICE={"gpt-6-luna":[0.10,0.50],"gpt-5.6-luna":[0.20,1.20],"gpt-5-mini":[0.25,2.00],"gpt-5.4-nano":[0.20,1.25],"gpt-5-nano":[0.05,0.40],"gpt-4.1-mini":[0.40,1.60],"gpt-4o-mini":[0.15,0.60]};
+let oaModel=null,oaNoReason=false;
+async function oaPick(){
+ if(key("m_openai"))return oaModel=key("m_openai");
+ if(oaModel)return oaModel;
+ try{const r=await fetch("https://api.openai.com/v1/models",{headers:{"Authorization":"Bearer "+key("k_openai")}});
+  if(r.status===401)throw new Error("ключ OpenAI неверный");
+  if(r.ok){const ids=((await r.json()).data||[]).map(m=>m.id);const f=OA_PREF.find(m=>ids.includes(m));if(f)return oaModel=f}
+ }catch(e){if(/неверный/.test(e.message))throw e}
+ return oaModel="gpt-4o-mini";
+}
+function oaCost(m,u){const p=OA_PRICE[m]||[0.5,2];return ((u.prompt_tokens||0)*p[0]+(u.completion_tokens||0)*p[1])/1e6}
+async function openaiTeacher(userText,status){
+ const m=await oaPick();
+ chat.push({role:"user",parts:[{text:userText}]});
+ const msgs=[{role:"system",content:SYS},...chat.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text).join("")}))];
+ for(let a=0;a<3;a++){
+  const body={model:m,messages:msgs,response_format:{type:"json_object"}};
+  if(!oaNoReason&&/^gpt-(5|6)/.test(m))body.reasoning_effort="low";
+  const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),30000);let r;
+  try{r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",signal:ctl.signal,headers:{"Authorization":"Bearer "+key("k_openai"),"Content-Type":"application/json"},body:JSON.stringify(body)})}
+  catch(e){clearTimeout(tm);status&&status("OpenAI не отвечает, пробую ещё раз…");continue}
+  clearTimeout(tm);
+  if(r.status===400&&body.reasoning_effort){const t=await r.text();if(/reasoning/i.test(t)){oaNoReason=true;a--;continue}chat.pop();throw new Error("OpenAI 400: "+t.slice(0,200))}
+  if(r.status===401){chat.pop();throw new Error("OpenAI: ключ неверный. Проверьте ⚙︎ Настройки.")}
+  if(r.status===429){const t=await r.text();if(/insufficient_quota|billing/i.test(t)){chat.pop();throw new Error("OpenAI: на счёте закончились деньги (пополните на platform.openai.com).")}
+   status&&status("OpenAI просит подождать…");await sleep(3000);continue}
+  if(r.status>=500){status&&status("OpenAI перегружен, пробую ещё раз…");await sleep(2000);continue}
+  if(!r.ok){chat.pop();throw new Error("OpenAI "+r.status+": "+(await r.text()).slice(0,200))}
+  const j=await r.json();const txt=((j.choices||[])[0]||{}).message?.content||"";
+  if(j.usage){const u=LS.get("pl_oacost",{});if(u.m!==month()){u.m=month();u.usd=0;u.n=0}u.usd+=oaCost(m,j.usage);u.n++;LS.set("pl_oacost",u);showUsage()}
+  let o;try{o=JSON.parse(txt)}catch(e){o={pt:txt,translit:"",ru:"",fix_ru:""}}
+  chat.push({role:"model",parts:[{text:JSON.stringify(o)}]});
+  return o;
+ }
+ chat.pop();throw new Error("OpenAI сейчас недоступен.");
+}
+/* выбор учителя: OpenAI (если есть ключ), иначе/при сбое — Gemini */
+async function teacher(userText,status){
+ let oaErr=null;
+ if(key("k_openai")){
+  try{return await openaiTeacher(userText,status)}
+  catch(e){oaErr=e;if(!key("k_gemini"))throw e;status&&status("OpenAI недоступен, пробую Gemini…")}
+ }
+ try{return await gemini(userText,status)}
+ catch(e){if(oaErr)throw new Error(oaErr.message+" Gemini: "+e.message);throw e}
+}
 function addBubble(cls,html){const d=document.createElement("div");d.className="bubble "+cls;d.innerHTML=html;$("chatLog").appendChild(d);d.scrollIntoView({behavior:"smooth",block:"end"});return d}
 async function teacherTurn(userText){
  const wait=addBubble("tu",`<span class="muted">Учитель думает…</span>`);
- try{const o=await gemini(userText,msg=>{wait.innerHTML=`<span class="muted">Учитель думает… (${esc(msg)})</span>`});
+ try{const o=await teacher(userText,msg=>{wait.innerHTML=`<span class="muted">Учитель думает… (${esc(msg)})</span>`});
   wait.innerHTML=(o.fix_ru?`<div style="color:var(--warn)">✎ ${esc(o.fix_ru)}</div>`:"")+
    `<div class="pt">${esc(o.pt||"")}</div><div class="tr">${esc(o.translit||"")}</div><div class="ru">${esc(o.ru||"")}</div>
    <button class="b s">▶ Повторить</button><button class="b s">🐢</button><button class="b mic">🎤 Ответить</button>`;
@@ -519,6 +570,7 @@ $("sSave").onclick=()=>{saveKeys();gemModel=null;$("sRes").innerHTML=`<span styl
 $("sTest").onclick=async()=>{saveKeys();gemModel=null;let h="";
  try{await ttsBlob("Olá!","0%");h+=`<div style="color:var(--ok)">✓ Azure: озвучка работает</div>`}catch(e){h+=`<div class="err">✗ Azure: ${esc(e.message)}</div>`}
  try{if(!key("k_gemini"))throw new Error("нет ключа");const m=await pickModel();h+=`<div style="color:var(--ok)">✓ Gemini: ключ есть, модель для учителя: <b>${esc(m)}</b></div>`}catch(e){h+=`<div class="err">✗ Gemini: ${esc(e.message)}</div>`}
+ if(key("k_openai")){oaModel=null;try{const m=await oaPick();h+=`<div style="color:var(--ok)">✓ OpenAI: ключ работает, основной учитель: <b>${esc(m)}</b></div>`}catch(e){h+=`<div class="err">✗ OpenAI: ${esc(e.message)}</div>`}}
  $("sRes").innerHTML=h};
 try{const r=localStorage.getItem("pl_rate");if(r)$("rate").value=r}catch(e){}
 $("gender").value=FEMALE?"f":"m";$("gender").onchange=()=>{try{localStorage.setItem("pl_gender",$("gender").value)}catch(e){};location.reload()};
