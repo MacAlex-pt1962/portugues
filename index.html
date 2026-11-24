@@ -39,7 +39,7 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 </head>
 <body><main>
 <h1>Урок 1. Скелет языка</h1>
-<p class="muted" style="margin:0">Версия 1.4 · 24.11.2026</p>
+<p class="muted" style="margin:0">Версия 1.5 · 24.11.2026</p>
 <p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
 <nav id="nav">
 <button data-t="today">📅 Сегодня</button>
@@ -421,10 +421,12 @@ async function pickModel(){
    const bad=/(tts|audio|live|image|embed|vision|robotics|computer|thinking|exp)/i;
    const stable=ms.filter(n=>/flash/i.test(n)&&!bad.test(n)&&!/preview/i.test(n));
    const srt=arr=>arr.sort((a,b)=>((verNum(b)[0]||0)-(verNum(a)[0]||0))||(a.length-b.length));
-   let c=srt(stable.filter(n=>!/lite/i.test(n)));
-   c=c.concat(srt(stable.filter(n=>/lite/i.test(n))));        // запасные: облегчённые модели
+   const full=srt(stable.filter(n=>!/lite/i.test(n))),lite=srt(stable.filter(n=>/lite/i.test(n)));
+   // чередуем: новейшая обычная, новейшая облегчённая, 2.5 (старые — обычно менее загружены), затем остальные
+   const pref=[full[0],lite[0],"gemini-2.5-flash","gemini-2.5-flash-lite",full[1],lite[1],full[2]];
+   let c=[...new Set(pref.filter(n=>n&&ms.includes(n)))];
    if(!c.length)c=srt(ms.filter(n=>/flash/i.test(n)&&!bad.test(n)));
-   if(c.length){gemCands=c.slice(0,5);gemModel=gemCands[0];return gemModel}}
+   if(c.length){gemCands=c.slice(0,6);gemModel=gemCands[0];return gemModel}}
  }catch(e){}
  gemCands=["gemini-2.5-flash","gemini-2.5-flash-lite"];gemModel=gemCands[0];return gemModel;
 }
@@ -447,7 +449,7 @@ async function gemini(userText,status){
  if(!key("k_gemini"))throw new Error("Нет ключа Gemini: откройте ⚙︎ Настройки.");
  await pickModel();
  chat.push({role:"user",parts:[{text:userText}]});
- const order=[gemModel,...gemCands.filter(m=>m!==gemModel)].slice(0,3);
+ const order=[gemModel,...gemCands.filter(m=>m!==gemModel)].slice(0,5);
  let lastErr="";
  for(let mi=0;mi<order.length;mi++){
   const m=order[mi];let useThink=true;
@@ -460,7 +462,7 @@ async function gemini(userText,status){
    if(r.status===429){const t=await r.text();let sec=0;try{const d=(JSON.parse(t).error.details||[]).find(x=>x.retryDelay);if(d)sec=parseFloat(d.retryDelay)}catch(e){}
     if(sec>0&&sec<=20&&a<1){status(`Лимит Google, жду ${Math.ceil(sec)} сек…`);await sleep((sec+1)*1000);continue}
     lastErr="бесплатный лимит этой модели исчерпан";break}
-   if(r.status>=500){lastErr="серверы Google перегружены";status(lastErr+", пробую ещё раз…");await sleep([1500,3000][a]);continue}
+   if(r.status>=500){lastErr="серверы Google перегружены";status("модель «"+m+"» перегружена, пробую другую…");await sleep(800);break}
    if(r.status===404){lastErr="модель не найдена";break}
    if(!r.ok){chat.pop();throw new Error("Gemini "+r.status+": "+(await r.text()).slice(0,200))}
    const j=await r.json();const txt=(((j.candidates||[])[0]||{}).content||{}).parts?.filter(p=>!p.thought).map(p=>p.text||"").join("")||"";
