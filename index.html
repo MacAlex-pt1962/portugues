@@ -409,40 +409,52 @@ Rules:
 - If the student's sentence has a grammar or word error, explain it briefly in Russian in "fix_ru" and give the correct Portuguese sentence; otherwise "fix_ru" is "".
 Answer ONLY with JSON: {"pt":"your reply in European Portuguese","translit":"approximate Russian Cyrillic transcription of pt with European pronunciation (reduced unstressed vowels, s before consonant and at word end = ш)","ru":"Russian translation of pt","fix_ru":"correction in Russian or empty"}`;
 if(FEMALE)SYS=SYS.replace("a Russian-speaking adult man (born 1962, Ukrainian, living in Portugal)","a Russian-speaking adult woman (Ukrainian, living in Portugal)").replace("greetings (olá, bom dia, boa tarde, boa noite, obrigado,","greetings (olá, bom dia, boa tarde, boa noite, obrigada (the student is a woman),");
-let gemModel=null,chat=[];
+let gemModel=null,gemCands=[],chat=[];
 function verNum(n){return (n.match(/\d+(\.\d+)?/g)||["0"]).map(Number)}
 async function pickModel(){
- if(key("m_gemini")){gemModel=key("m_gemini").replace(/^models\//,"");return gemModel}
+ if(key("m_gemini")){gemModel=key("m_gemini").replace(/^models\//,"");gemCands=[gemModel];return gemModel}
  if(gemModel)return gemModel;
  try{
   const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":key("k_gemini")}});
   if(r.ok){const j=await r.json();const ms=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""));
-   const bad=/(tts|audio|live|image|embed|vision|robotics|computer|lite|thinking|exp)/i;
-   let c=ms.filter(n=>/flash/i.test(n)&&!bad.test(n)&&!/preview/i.test(n));
-   if(!c.length)c=ms.filter(n=>/flash/i.test(n)&&!bad.test(n));
-   c.sort((a,b)=>((verNum(b)[0]||0)-(verNum(a)[0]||0))||(a.length-b.length));
-   if(c.length){gemModel=c[0];return gemModel}}
+   const bad=/(tts|audio|live|image|embed|vision|robotics|computer|thinking|exp)/i;
+   const stable=ms.filter(n=>/flash/i.test(n)&&!bad.test(n)&&!/preview/i.test(n));
+   const srt=arr=>arr.sort((a,b)=>((verNum(b)[0]||0)-(verNum(a)[0]||0))||(a.length-b.length));
+   let c=srt(stable.filter(n=>!/lite/i.test(n)));
+   c=c.concat(srt(stable.filter(n=>/lite/i.test(n))));        // запасные: облегчённые модели
+   if(!c.length)c=srt(ms.filter(n=>/flash/i.test(n)&&!bad.test(n)));
+   if(c.length){gemCands=c.slice(0,5);gemModel=gemCands[0];return gemModel}}
  }catch(e){}
- gemModel="gemini-2.5-flash";return gemModel;
+ gemCands=["gemini-2.5-flash","gemini-2.5-flash-lite"];gemModel=gemCands[0];return gemModel;
 }
 async function gemini(userText){
  if(!key("k_gemini"))throw new Error("Нет ключа Gemini: откройте ⚙︎ Настройки.");
- const m=await pickModel();
+ await pickModel();
  chat.push({role:"user",parts:[{text:userText}]});
- for(let a=0;a<3;a++){
-  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,{method:"POST",
-   headers:{"x-goog-api-key":key("k_gemini"),"Content-Type":"application/json"},
-   body:JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:chat,generationConfig:{responseMimeType:"application/json",temperature:0.6}})});
-  if(r.status===429){const t=await r.text();let sec=0;try{const d=(JSON.parse(t).error.details||[]).find(x=>x.retryDelay);if(d)sec=parseFloat(d.retryDelay)}catch(e){}
-   if(sec>0&&sec<=60&&a<2){await sleep((sec+1)*1000);continue}
-   chat.pop();throw new Error("Лимит бесплатного Gemini исчерпан"+(sec>60||!sec?" (вероятно, дневной — сбросится в 08:00)":"")+".")}
-  if(r.status===404){chat.pop();throw new Error(`Модель «${m}» не найдена. Откройте ⚙︎ Настройки и очистите поле модели (или впишите другую).`)}
-  if(!r.ok){chat.pop();throw new Error("Gemini "+r.status+": "+(await r.text()).slice(0,200))}
-  const j=await r.json();const txt=(((j.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||"").join("")||"";
-  let o;try{o=JSON.parse(txt.replace(/^```(json)?|```$/g,"").trim())}catch(e){o={pt:txt,translit:"",ru:"",fix_ru:""}}
-  chat.push({role:"model",parts:[{text:JSON.stringify(o)}]});
-  return o;
+ const order=[gemModel,...gemCands.filter(m=>m!==gemModel)];
+ let lastErr="";
+ for(const m of order){
+  for(let a=0;a<3;a++){
+   let r;
+   try{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,{method:"POST",
+    headers:{"x-goog-api-key":key("k_gemini"),"Content-Type":"application/json"},
+    body:JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:chat,generationConfig:{responseMimeType:"application/json",temperature:0.6}})})}
+   catch(e){lastErr="нет связи с Google";await sleep(2000);continue}
+   if(r.status===429){const t=await r.text();let sec=0;try{const d=(JSON.parse(t).error.details||[]).find(x=>x.retryDelay);if(d)sec=parseFloat(d.retryDelay)}catch(e){}
+    if(sec>0&&sec<=60&&a<2){await sleep((sec+1)*1000);continue}
+    if(sec>60||!sec){lastErr="дневной бесплатный лимит этой модели исчерпан";break}   // пробуем другую модель
+    continue}
+   if(r.status>=500){lastErr="серверы Google перегружены";await sleep([2000,5000,9000][a]);continue}
+   if(r.status===404){lastErr="модель не найдена";break}
+   if(!r.ok){chat.pop();throw new Error("Gemini "+r.status+": "+(await r.text()).slice(0,200))}
+   const j=await r.json();const txt=(((j.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||"").join("")||"";
+   let o;try{o=JSON.parse(txt.replace(/^```(json)?|```$/g,"").trim())}catch(e){o={pt:txt,translit:"",ru:"",fix_ru:""}}
+   chat.push({role:"model",parts:[{text:JSON.stringify(o)}]});
+   gemModel=m;return o;
+  }
  }
+ chat.pop();
+ throw new Error("Учитель сейчас недоступен: "+lastErr+". Подождите минуту и нажмите «Повторить».");
 }
 function addBubble(cls,html){const d=document.createElement("div");d.className="bubble "+cls;d.innerHTML=html;$("chatLog").appendChild(d);d.scrollIntoView({behavior:"smooth",block:"end"});return d}
 async function teacherTurn(userText){
@@ -453,7 +465,7 @@ async function teacherTurn(userText){
    <button class="b s">▶ Повторить</button><button class="b s">🐢</button>`;
   const [b1,b2]=wait.querySelectorAll("button");b1.onclick=()=>say(o.pt).catch(()=>{});b2.onclick=()=>say(o.pt,{slow:true}).catch(()=>{});
   await say(o.pt).catch(e=>wait.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`));
- }catch(e){wait.innerHTML=`<div class="err">${esc(e.message||e)}</div>`}
+ }catch(e){wait.innerHTML=`<div class="err">${esc(e.message||e)}</div><button class="b s">↻ Повторить</button>`;wait.querySelector("button").onclick=()=>{wait.remove();teacherTurn(userText)}}
 }
 $("cStart").onclick=async()=>{chat=[];$("chatLog").innerHTML="";$("cMic").disabled=false;$("cSend").disabled=false;
  await teacherTurn("(Начни урок: поздоровайся со мной и задай первый простой вопрос.)")};
