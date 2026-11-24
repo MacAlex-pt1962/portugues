@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Урок португальского</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--muted:#6b6b70;--line:#e2e0da;--acc:#0b6e4f;--acc2:#e7f3ee;--warn:#a4441c;--ok:#1a8a4a;--mid:#b7860b;--bad:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--card:#1e1e20;--ink:#f2f2f2;--muted:#a0a0a6;--line:#333;--acc:#3ccf95;--acc2:#1d3a2f;--warn:#ff8a5c;--ok:#4cd383;--mid:#e9b93a;--bad:#ff6b5b}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 -apple-system,system-ui,sans-serif}
+main{max-width:920px;margin:0 auto;padding:16px}
+h1{font-size:26px;margin:6px 0 2px}h2{font-size:20px;margin:0 0 10px}
+.muted{color:var(--muted);font-size:15px}.err{color:var(--warn);font-size:14px;white-space:pre-wrap}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5}
+nav button{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:7px 14px;font-size:15px;cursor:pointer}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+.pt{font-size:21px;font-weight:600}.tr{color:var(--muted);font-size:15px}.ru{font-size:16px}
+button.b{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:9px 14px;font-size:16px;cursor:pointer;margin:8px 6px 0 0}
+button.s{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+button.mic{background:#c0392b}button.mic.rec{background:#7a1d14;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+button:disabled{opacity:.5;cursor:default}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:16px}
+label{display:block;font-size:14px;color:var(--muted);margin-top:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.row{grid-template-columns:1fr}}
+.res{margin-top:8px}.w{display:inline-block;padding:1px 5px;border-radius:5px;margin:2px;font-size:18px}
+.w.g{background:#d8f3e3;color:#0c5a2e}.w.y{background:#fbefc5;color:#6b4e00}.w.r{background:#f9d6d2;color:#7a1d14}.w.o{text-decoration:line-through;opacity:.6}.w.i{background:#e7dcf7;color:#4a2a7a}
+@media (prefers-color-scheme:dark){.w.g{background:#1d4a32;color:#bff0d2}.w.y{background:#4a3d12;color:#f6e3a3}.w.r{background:#4d1f1b;color:#ffd0ca}.w.i{background:#3a2a55;color:#e2d4ff}}
+.score{font-weight:700}
+table.m{width:100%;border-collapse:collapse;font-size:16px}table.m td,table.m th{border-bottom:1px solid var(--line);padding:7px;text-align:left;vertical-align:top}
+table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
+.big{font-size:24px;font-weight:600;margin:6px 0}
+.bubble{border-radius:12px;padding:10px 12px;margin:8px 0;max-width:90%}
+.me{background:var(--acc2);margin-left:auto}.tu{background:var(--card);border:1px solid var(--line)}
+.legend{font-size:13px}
+</style>
+</head>
+<body><main>
+<h1>Урок 1. Скелет языка</h1>
+<p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
+<nav id="nav">
+<button data-t="today">📅 Сегодня</button>
+<button data-t="greet" class="on">1. Приветствия</button>
+<button data-t="matrix">2. Таблица</button>
+<button data-t="phr">3. Фразы</button>
+<button data-t="drill">4. Тренажёр</button>
+<button data-t="chat">5. Разговор</button>
+<button data-t="prog">Прогресс</button>
+<button data-t="set">⚙︎ Настройки</button>
+</nav>
+
+<section id="t-today">
+<div class="card">
+<h2>Сегодня</h2>
+<div id="todayBox"></div>
+</div>
+<div class="card" id="revCard" style="display:none">
+<div class="muted" id="rvKind"></div>
+<div class="big" id="rvFront"></div>
+<div id="rvNew"></div>
+<div id="rvActions">
+<button class="b mic" id="rvMic">🎤 Сказать по-португальски</button>
+<button class="b s" id="rvShow">Не помню — показать ответ</button>
+</div>
+<div class="res" id="rvRes"></div>
+<div id="rvGrades"></div>
+<p class="muted" id="rvLeft"></p>
+</div>
+<div class="card"><p class="muted legend"><b>Как это работает.</b> Как в Anki: карточку, которую вы вспомнили, приложение покажет снова через всё больший срок (1 день, 3, 7, 3 недели…), а ту, что не вспомнили, — уже через 1–10 минут и завтра снова. <b>Днём</b> (30–60 мин): повторение карточек, которые пора повторить, плюс до 10 новых в день, потом урок. <b>Вечером</b> (5 мин, перед сном): быстрый прогон всего, что было сегодня; если что-то забылось, эта карточка вернётся завтра.</p></div>
+</section>
+
+<section id="t-greet" class="on">
+<p class="muted">Нажмите ▶, чтобы послушать, 🐢 — медленно. Затем 🎤 «Сказать», произнесите фразу и нажмите «Стоп». Цвета слов: <span class="w g">хорошо</span><span class="w y">так себе</span><span class="w r">повторить</span><span class="w o">пропущено</span><span class="w i">лишнее</span></p>
+<div id="greetList"></div>
+</section>
+
+<section id="t-matrix">
+<div class="card">
+<h2>Глагольная таблица</h2>
+<p class="muted">Главная схема урока. Нажмите на любую клетку, чтобы послушать. Вопрос задаётся интонацией, отрицание — словом <b>não</b> (нáу(н)) перед глаголом. Сочетание «(н)» в транскрипции означает носовой звук.</p>
+<label>Глагол</label>
+<select id="verbSel"><option value="falar">falar — говорить</option><option value="morar">morar — жить</option><option value="trabalhar">trabalhar — работать</option></select>
+<div id="matrix" style="margin-top:10px"></div>
+</div>
+<div class="card">
+<h2>Вопрос и отрицание</h2>
+<div id="qnList"></div>
+</div>
+</section>
+
+<section id="t-phr">
+<p class="muted">Фразы, собранные из таблицы. Слушайте и повторяйте.</p>
+<div id="phrList"></div>
+</section>
+
+<section id="t-drill">
+<div class="card">
+<h2>Тренажёр «по Петрову»</h2>
+<p class="muted">Вы видите фразу по-русски. Соберите её по таблице и скажите по-португальски <b>вместе с местоимением</b> (eu, tu, ele, nós, eles). Потом проверьте себя.</p>
+<div class="big" id="dPrompt">Нажмите «Новое задание»</div>
+<button class="b s" id="dNew">Новое задание</button>
+<button class="b mic" id="dMic" disabled>🎤 Сказать</button>
+<button class="b s" id="dShow" disabled>Показать ответ</button>
+<div class="res" id="dRes"></div>
+<p class="muted" id="dStat"></p>
+</div>
+</section>
+
+<section id="t-chat">
+<div class="card">
+<h2>Разговор с учителем</h2>
+<p class="muted">Учитель говорит только словами урока 1, медленно, и поправляет ошибки по-русски. Нажмите 🎤, скажите ответ, нажмите «Стоп». Если микрофон не работает, можно написать ответ текстом.</p>
+<button class="b" id="cStart">Начать разговор</button>
+<button class="b mic" id="cMic" disabled>🎤 Ответить</button>
+<button class="b s" id="cReset">Начать заново</button>
+<div id="chatLog"></div>
+<div style="display:flex;gap:8px;margin-top:8px"><input id="cText" placeholder="Или напишите по-португальски…"><button class="b" id="cSend" style="margin:0" disabled>→</button></div>
+</div>
+</section>
+
+<section id="t-prog">
+<div class="card"><h2>Ваш прогресс</h2><div id="progBox"></div>
+<button class="b s" id="pClear">Сбросить прогресс</button></div>
+</section>
+
+<section id="t-set">
+<div class="card">
+<h2>Ключи</h2>
+<p class="muted">Хранятся только в этом браузере. Не пересылайте их и не показывайте на фото.</p>
+<div class="row">
+<div><label>Microsoft Azure Speech key</label><input id="k_azure" type="password" autocomplete="off"></div>
+<div><label>Регион Azure</label><input id="r_azure" value="northeurope"></div>
+<div><label>Google Gemini API key</label><input id="k_gemini" type="password" autocomplete="off"></div>
+<div><label>Модель Gemini (пусто = выбрать автоматически)</label><input id="m_gemini" placeholder="авто"></div>
+</div>
+<button class="b" id="sSave">Сохранить</button>
+<button class="b s" id="sTest">Проверить соединение</button>
+<div id="sRes" class="res"></div>
+</div>
+<div class="card"><h2>Резервная копия прогресса</h2>
+<p class="muted">Сохраняет карточки, баллы и настройки урока в файл на этом Mac. <b>Ключи в файл не попадают.</b> Рекомендуется раз в неделю, а также перед переездом на новый адрес или другой компьютер.</p>
+<button class="b" id="bkSave">💾 Сохранить прогресс в файл</button>
+<button class="b s" id="bkLoad">📂 Загрузить прогресс из файла</button>
+<input type="file" id="bkFile" accept=".json,application/json" style="display:none">
+<div id="bkRes" class="res"></div></div>
+<div class="card"><h2>Кто учится</h2><select id="gender"><option value="m">Мужчина (Obrigado, «я работал»)</option><option value="f">Женщина (Obrigada, «я работала»)</option></select><p class="muted">После смены страница перезагрузится.</p></div>
+<div class="card"><h2>Скорость речи эталона</h2>
+<select id="rate"><option value="-15%">Немного медленнее (рекомендуется)</option><option value="0%">Обычная</option><option value="-30%">Медленно</option></select></div>
+<div class="card"><h2>Расход бесплатных лимитов (этот месяц, этот браузер)</h2><div id="usage"></div></div>
+</section>
+</main>
+
+<script>
+/* ===================== ДАННЫЕ УРОКА ===================== */
+const GREET=[
+{pt:"Olá!",tr:"Олá!",ru:"Привет! / Здравствуйте!"},
+{pt:"Bom dia!",tr:"Бом ди́а!",ru:"Доброе утро! / Добрый день! (до обеда)"},
+{pt:"Boa tarde!",tr:"Бóа тáрд!",ru:"Добрый день! (после обеда)"},
+{pt:"Boa noite!",tr:"Бóа нóйт!",ru:"Добрый вечер! / Спокойной ночи!"},
+{pt:"Obrigado!",tr:"Обригáду!",ru:"Спасибо! (говорит мужчина; женщина говорит Obrigada — обригáда)"},
+{pt:"Por favor.",tr:"Пур фавóр.",ru:"Пожалуйста (при просьбе)."},
+{pt:"Desculpe.",tr:"Дышкýлп.",ru:"Извините."},
+{pt:"Como se chama?",tr:"Кóму сы шáма?",ru:"Как вас зовут?"},
+{pt:"Muito prazer!",tr:"Мýйту прызéр!",ru:"Очень приятно!"},
+{pt:"Até logo!",tr:"Атэ́ лóгу!",ru:"До встречи!"}
+];
+const PRON=[
+{pt:"eu",tr:"эу",ru:"я"},{pt:"tu",tr:"ту",ru:"ты"},{pt:"ele",tr:"эл",ru:"он"},{pt:"nós",tr:"нóш",ru:"мы"},{pt:"eles",tr:"элыш",ru:"они"}];
+const VERBS={
+falar:{ru:"говорить",obj:{pt:"português",tr:"пуртугéш",ru:"по-португальски"},
+ pres:[["falo","фáлу"],["falas","фáлаш"],["fala","фáла"],["falamos","фалáмуш"],["falam","фáлау(н)"]],
+ past:[["falei","фалэ́й"],["falaste","фалáшт"],["falou","фалó"],["falámos","фалáмуш"],["falaram","фалáрау(н)"]],
+ inf:["falar","фалáр"],
+ ruf:{pres:["говорю","говоришь","говорит","говорим","говорят"],past:["говорил","говорил","говорил","говорили","говорили"],fut:["буду говорить","будешь говорить","будет говорить","будем говорить","будут говорить"]}},
+morar:{ru:"жить",obj:{pt:"aqui",tr:"аки́",ru:"здесь"},
+ pres:[["moro","мóру"],["moras","мóраш"],["mora","мóра"],["moramos","мурáмуш"],["moram","мóрау(н)"]],
+ past:[["morei","мурэ́й"],["moraste","мурáшт"],["morou","мурó"],["morámos","мурáмуш"],["moraram","мурáрау(н)"]],
+ inf:["morar","мурáр"],
+ ruf:{pres:["живу","живёшь","живёт","живём","живут"],past:["жил","жил","жил","жили","жили"],fut:["буду жить","будешь жить","будет жить","будем жить","будут жить"]}},
+trabalhar:{ru:"работать",obj:{pt:"aqui",tr:"аки́",ru:"здесь"},
+ pres:[["trabalho","трабáлью"],["trabalhas","трабáльяш"],["trabalha","трабáлья"],["trabalhamos","трабалья́муш"],["trabalham","трабáльяу(н)"]],
+ past:[["trabalhei","трабалья́й"],["trabalhaste","трабалья́шт"],["trabalhou","трабалью́"],["trabalhámos","трабалья́муш"],["trabalharam","трабалья́рау(н)"]],
+ inf:["trabalhar","трабалья́р"],
+ ruf:{pres:["работаю","работаешь","работает","работаем","работают"],past:["работал","работал","работал","работали","работали"],fut:["буду работать","будешь работать","будет работать","будем работать","будут работать"]}}
+};
+const IR=[["vou","вóу"],["vais","вайш"],["vai","вай"],["vamos","вáмуш"],["vão","вáу(н)"]];
+const RUPRON=["я","ты","он","мы","они"];
+const QN=[
+{pt:"Tu falas português?",tr:"Ту фáлаш пуртугéш?",ru:"Ты говоришь по-португальски? (вопрос — только интонацией)"},
+{pt:"Não, eu não falo português.",tr:"Нáу(н), эу нáу(н) фáлу пуртугéш.",ru:"Нет, я не говорю по-португальски."},
+{pt:"Sim, eu falo português.",tr:"Сим, эу фáлу пуртугéш.",ru:"Да, я говорю по-португальски."}
+];
+const PHR=[
+{pt:"Eu falo russo e ucraniano.",tr:"Эу фáлу рýсу и укрынья́ну.",ru:"Я говорю по-русски и по-украински."},
+{pt:"Não falo português.",tr:"Нáу(н) фáлу пуртугéш.",ru:"Я не говорю по-португальски."},
+{pt:"Falas inglês?",tr:"Фáлаш инглéш?",ru:"Ты говоришь по-английски?"},
+{pt:"Moro em Portugal.",tr:"Мóру ай(н) Пуртугáл.",ru:"Я живу в Португалии."},
+{pt:"Onde moras?",tr:"Óнд мóраш?",ru:"Где ты живёшь?"},
+{pt:"Trabalho aqui.",tr:"Трабáлью аки́.",ru:"Я работаю здесь."},
+{pt:"Ontem trabalhei muito.",tr:"Óнтай(н) трабалья́й мýйту.",ru:"Вчера я много работал."},
+{pt:"Falaste português ontem?",tr:"Фалáшт пуртугéш óнтай(н)?",ru:"Ты говорил по-португальски вчера?"},
+{pt:"Amanhã vou falar português.",tr:"Амынья́(н) вóу фалáр пуртугéш.",ru:"Завтра я буду говорить по-португальски."},
+{pt:"Não trabalho amanhã.",tr:"Нáу(н) трабáлью амынья́(н).",ru:"Завтра я не работаю."}
+];
+
+/* ===================== ПОЛ УЧЕНИКА ===================== */
+let FEMALE=false;try{FEMALE=localStorage.getItem("pl_gender")==="f"}catch(e){}
+if(FEMALE){
+ GREET[4]={pt:"Obrigada!",tr:"Обригáда!",ru:"Спасибо! (говорит женщина; мужчина говорит Obrigado — обригáду)"};
+ PHR[6]={...PHR[6],ru:"Вчера я много работала."};
+ VERBS.falar.ruf.past[0]="говорила";VERBS.morar.ruf.past[0]="жила";VERBS.trabalhar.ruf.past[0]="работала";
+}
+/* ===================== УТИЛИТЫ ===================== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const KEYS=["k_azure","r_azure","k_gemini","m_gemini"];
+function loadKeys(){KEYS.forEach(k=>{let v;try{v=localStorage.getItem("ptt_"+k)}catch(e){};if(v)$(k).value=v})}
+function saveKeys(){KEYS.forEach(k=>{try{localStorage.setItem("ptt_"+k,$(k).value.trim())}catch(e){}})}
+const key=id=>$(id).value.trim();
+
+/* расход */
+function month(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)}
+function useAdd(kind,n){const u=LS.get("pl_usage",{});if(u.m!==month()){u.m=month();u.stt=0;u.tts=0}u[kind]=(u[kind]||0)+n;LS.set("pl_usage",u);showUsage()}
+function showUsage(){const u=LS.get("pl_usage",{});const ok=u.m===month();const stt=ok?(u.stt||0):0,tts=ok?(u.tts||0):0;
+ $("usage").innerHTML=`Распознавание речи Azure: <b>${(stt/60).toFixed(1)} мин</b> из 300 мин (5 часов) бесплатно<br>Озвучка Azure: <b>${tts.toLocaleString("ru")}</b> символов из 500 000 бесплатно<br><span class="muted">Озвученные фразы сохраняются и повторно лимит не тратят. Если ключ Azure используют несколько человек, общий расход больше.</span>`}
+
+/* кэш аудио в IndexedDB */
+const DB={open(){return new Promise((res,rej)=>{const q=indexedDB.open("pl_audio",1);q.onupgradeneeded=()=>q.result.createObjectStore("a");q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
+ async get(k){try{const d=await this.open();return await new Promise(r=>{const q=d.transaction("a").objectStore("a").get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch(e){return null}},
+ async put(k,v){try{const d=await this.open();await new Promise(r=>{const t=d.transaction("a","readwrite");t.objectStore("a").put(v,k);t.oncomplete=r;t.onerror=r})}catch(e){}}};
+
+/* ===================== ОЗВУЧКА (Azure) ===================== */
+let player=null;
+function stopAudio(){if(player){player.pause();player=null}}
+function xml(s){return s.replace(/[<>&'"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;","'":"&apos;",'"':"&quot;"}[c]))}
+async function ttsBlob(text,rate,voice){
+ voice=voice||"pt-PT-RaquelNeural";
+ const k=voice+"|"+rate+"|"+text;let b=await DB.get(k);if(b)return b;
+ if(!key("k_azure"))throw new Error("Нет ключа Azure: откройте ⚙︎ Настройки.");
+ const ssml=`<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-PT"><voice name="${voice}"><prosody rate="${rate}">${xml(text)}</prosody></voice></speak>`;
+ const r=await fetch(`https://${key("r_azure")}.tts.speech.microsoft.com/cognitiveservices/v1`,{method:"POST",
+  headers:{"Ocp-Apim-Subscription-Key":key("k_azure"),"Content-Type":"application/ssml+xml","X-Microsoft-OutputFormat":"audio-24khz-48kbitrate-mono-mp3"},body:ssml});
+ if(!r.ok)throw new Error("Озвучка Azure "+r.status+": "+(await r.text()).slice(0,200));
+ b=await r.blob();useAdd("tts",text.length);await DB.put(k,b);return b;
+}
+async function say(text,opt={}){
+ stopAudio();const rate=opt.slow?"-35%":($("rate").value||"-15%");
+ const b=await ttsBlob(text,rate,opt.voice);
+ const a=new Audio(URL.createObjectURL(b));player=a;
+ await new Promise(res=>{a.onended=res;a.onerror=res;a.play().catch(res)});
+}
+
+/* ===================== ЗАПИСЬ С МИКРОФОНА ===================== */
+const Rec={mr:null,stream:null,chunks:[],timer:null,
+ async start(){
+  this.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});
+  this.chunks=[];this.mr=new MediaRecorder(this.stream);
+  const p=new Promise(res=>{this.mr.onstop=()=>{this.stream.getTracks().forEach(t=>t.stop());const b=new Blob(this.chunks,{type:this.mr.mimeType||"audio/webm"});this.mr=null;clearTimeout(this.timer);res(b)}});
+  this.mr.ondataavailable=e=>{if(e.data&&e.data.size)this.chunks.push(e.data)};
+  this.mr.start();this.timer=setTimeout(()=>this.stop(),20000);return p;
+ },
+ stop(){if(this.mr&&this.mr.state!=="inactive")this.mr.stop()},
+ get active(){return !!this.mr}
+};
+async function toWav16k(blob){
+ const ab=await blob.arrayBuffer();
+ const ctx=new (window.AudioContext||window.webkitAudioContext)();
+ const dec=await ctx.decodeAudioData(ab);try{ctx.close()}catch(e){}
+ const len=Math.max(1,Math.ceil(dec.duration*16000));
+ const off=new OfflineAudioContext(1,len,16000);
+ const src=off.createBufferSource();src.buffer=dec;src.connect(off.destination);src.start();
+ const out=(await off.startRendering()).getChannelData(0);
+ const buf=new ArrayBuffer(44+out.length*2),v=new DataView(buf);
+ const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+ w(0,"RIFF");v.setUint32(4,36+out.length*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+ v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,out.length*2,true);
+ for(let i=0;i<out.length;i++){const x=Math.max(-1,Math.min(1,out[i]));v.setInt16(44+i*2,x<0?x*0x8000:x*0x7fff,true)}
+ return {wav:new Blob([buf],{type:"audio/wav"}),sec:dec.duration};
+}
+/* кнопка микрофона: первый клик — запись, второй — стоп */
+async function micFlow(btn,label,handler){
+ if(Rec.active){Rec.stop();return}
+ stopAudio();
+ btn.classList.add("rec");btn.textContent="⏹ Стоп";
+ let blob;
+ try{blob=await Rec.start()}
+ catch(e){btn.classList.remove("rec");btn.textContent=label;
+  throw new Error("Нет доступа к микрофону. Разрешите микрофон для этой страницы (значок слева в адресной строке Chrome) и попробуйте снова.\n"+(e.message||e))}
+ btn.classList.remove("rec");btn.textContent="⏳ Проверяю…";btn.disabled=true;
+ try{const {wav,sec}=await toWav16k(blob);if(sec<0.4)throw new Error("Запись слишком короткая. Нажмите 🎤, скажите фразу, затем «Стоп».");useAdd("stt",sec);await handler(wav)}
+ finally{btn.disabled=false;btn.textContent=label}
+}
+
+/* ===================== РАСПОЗНАВАНИЕ И ОЦЕНКА (Azure) ===================== */
+function sttUrl(){return `https://${key("r_azure")}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=pt-PT&format=detailed`}
+async function azurePost(wav,extraHeaders){
+ if(!key("k_azure"))throw new Error("Нет ключа Azure: откройте ⚙︎ Настройки.");
+ for(let a=0;a<3;a++){
+  const r=await fetch(sttUrl(),{method:"POST",headers:Object.assign({"Ocp-Apim-Subscription-Key":key("k_azure"),"Content-Type":"audio/wav; codecs=audio/pcm; samplerate=16000","Accept":"application/json"},extraHeaders||{}),body:wav});
+  if(r.status===429||r.status>=500){await sleep(2500);continue}
+  if(!r.ok){const t=await r.text();const e=new Error("Распознавание Azure "+r.status+": "+t.slice(0,200));e.status=r.status;throw e}
+  return await r.json();
+ }
+ throw new Error("Сервис Azure занят, попробуйте через минуту.");
+}
+async function assess(wav,ref){
+ const mk=miscue=>{const c={ReferenceText:ref,GradingSystem:"HundredMark",Granularity:"Word",Dimension:"Comprehensive"};if(miscue)c.EnableMiscue="True";return btoa(unescape(encodeURIComponent(JSON.stringify(c))))};
+ let j;
+ try{j=await azurePost(wav,{"Pronunciation-Assessment":mk(true)})}
+ catch(e){if(e.status===400)j=await azurePost(wav,{"Pronunciation-Assessment":mk(false)});else throw e}
+ return parseAssess(j);
+}
+function parseAssess(j){
+ if(j.RecognitionStatus&&j.RecognitionStatus!=="Success")return {none:true,status:j.RecognitionStatus};
+ const nb=(j.NBest||[])[0]||{};const pa=nb.PronunciationAssessment||nb;
+ const words=(nb.Words||[]).map(w=>{const p=w.PronunciationAssessment||w;return {w:w.Word,acc:p.AccuracyScore,err:p.ErrorType||"None"}});
+ return {text:nb.Display||j.DisplayText||"",acc:pa.AccuracyScore,pron:pa.PronScore,flu:pa.FluencyScore,comp:pa.CompletenessScore,words};
+}
+async function recognize(wav){
+ const j=await azurePost(wav);
+ if(j.RecognitionStatus&&j.RecognitionStatus!=="Success")return "";
+ return ((j.NBest||[])[0]||{}).Display||j.DisplayText||"";
+}
+function wordsHtml(r){
+ return r.words.map(x=>{let c=x.err==="Omission"?"o":x.err==="Insertion"?"i":(x.acc>=80?"g":x.acc>=60?"y":"r");
+  const t=x.err==="Omission"?"пропущено":x.err==="Insertion"?"лишнее слово":"точность "+Math.round(x.acc||0);
+  return `<span class="w ${c}" title="${t}">${esc(x.w)}</span>`}).join(" ");
+}
+function verdict(score){return score>=85?"Отлично!":score>=70?"Хорошо. Можно ещё чище.":score>=50?"Неплохо, повторите ещё раз.":"Послушайте эталон медленно 🐢 и попробуйте снова."}
+
+/* прогресс */
+function saveScore(id,score){const p=LS.get("pl_prog",{});const e=p[id]||{best:0,n:0};e.n++;e.last=Math.round(score);e.best=Math.max(e.best,Math.round(score));e.t=Date.now();p[id]=e;LS.set("pl_prog",p)}
+
+/* ===================== КАРТОЧКИ ФРАЗ ===================== */
+function cardHtml(p,id){return `<div class="card" data-id="${id}"><div class="pt">${esc(p.pt)}</div><div class="tr">${esc(p.tr)}</div><div class="ru">${esc(p.ru)}</div>
+<button class="b s" data-act="play">▶ Слушать</button><button class="b s" data-act="slow">🐢 Медленно</button><button class="b mic" data-act="mic">🎤 Сказать</button>
+<div class="res"></div></div>`}
+function bindCards(container,items,prefix){
+ container.innerHTML=items.map((p,i)=>cardHtml(p,prefix+i)).join("");
+ container.querySelectorAll(".card").forEach((card,i)=>{
+  const p=items[i],res=card.querySelector(".res");
+  card.querySelector('[data-act="play"]').onclick=()=>say(p.pt).catch(e=>res.innerHTML=`<div class="err">${esc(e.message)}</div>`);
+  card.querySelector('[data-act="slow"]').onclick=()=>say(p.pt,{slow:true}).catch(e=>res.innerHTML=`<div class="err">${esc(e.message)}</div>`);
+  const mb=card.querySelector('[data-act="mic"]');
+  mb.onclick=()=>micFlow(mb,"🎤 Сказать",async wav=>{
+    const r=await assess(wav,p.pt);
+    if(r.none){res.innerHTML=`<div class="err">Не расслышал. Говорите чуть громче и ближе к микрофону.</div>`;return}
+    const sc=r.pron!=null?r.pron:r.acc;saveScore(card.dataset.id,sc);
+    res.innerHTML=`<div>${wordsHtml(r)}</div><div><span class="score">${Math.round(sc)}/100</span> — ${verdict(sc)}</div>`;
+  }).catch(e=>res.innerHTML=`<div class="err">${esc(e.message||e)}</div>`);
+ });
+}
+
+/* ===================== ТАБЛИЦА ===================== */
+function renderMatrix(){
+ const v=VERBS[$("verbSel").value];
+ let h=`<table class="m"><tr><th></th><th>Настоящее</th><th>Прошедшее</th><th>Будущее</th></tr>`;
+ PRON.forEach((pr,i)=>{
+  const f=[[pr.pt+" "+v.pres[i][0],v.pres[i][1]],[pr.pt+" "+v.past[i][0],v.past[i][1]],[pr.pt+" "+IR[i][0]+" "+v.inf[0],IR[i][1]+" "+v.inf[1]]];
+  h+=`<tr><td><b>${pr.pt}</b><br><span class="tr">${pr.tr} — ${pr.ru}</span></td>`+f.map(x=>`<td class="c" data-say="${esc(x[0])}"><b>${esc(x[0].split(" ").slice(1).join(" "))}</b><br><span class="tr">${esc(x[1])}</span></td>`).join("")+`</tr>`;
+ });
+ h+=`</table><p class="muted">В прошедшем времени у «мы» пишется ударение: <b>falámos</b> — это европейская норма (в Бразилии пишут falamos).</p>`;
+ $("matrix").innerHTML=h;
+ $("matrix").querySelectorAll("td.c").forEach(td=>td.onclick=()=>say(td.dataset.say).catch(e=>alert(e.message)));
+}
+
+/* ===================== ТРЕНАЖЁР ===================== */
+let cur=null;
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function makeTask(){
+ const vk=Object.keys(VERBS)[Math.floor(Math.random()*3)],v=VERBS[vk];
+ const i=Math.floor(Math.random()*5),tense=["pres","past","fut"][Math.floor(Math.random()*3)],form=["+","?","-"][Math.floor(Math.random()*3)];
+ let vf,vt;if(tense==="pres"){vf=v.pres[i][0];vt=v.pres[i][1]}else if(tense==="past"){vf=v.past[i][0];vt=v.past[i][1]}else{vf=IR[i][0]+" "+v.inf[0];vt=IR[i][1]+" "+v.inf[1]}
+ const neg=form==="-";
+ const pt=cap(PRON[i].pt+(neg?" não":"")+" "+vf+" "+v.obj.pt)+(form==="?"?"?":".");
+ const tr=cap(PRON[i].tr+(neg?" нáу(н)":"")+" "+vt+" "+v.obj.tr)+(form==="?"?"?":".");
+ const ru=cap(RUPRON[i]+(neg?" не":"")+" "+v.ruf[tense][i]+" "+v.obj.ru)+(form==="?"?"?":".");
+ return {pt,tr,ru,id:"d|"+vk+"|"+tense+"|"+i+"|"+form};
+}
+function newTask(){cur=makeTask();$("dPrompt").textContent=cur.ru;$("dRes").innerHTML="";$("dMic").disabled=false;$("dShow").disabled=false}
+function showAnswer(extra){$("dRes").innerHTML=(extra||"")+`<div class="card"><div class="pt">${esc(cur.pt)}</div><div class="tr">${esc(cur.tr)}</div><button class="b s" id="dPlay">▶ Слушать правильный ответ</button></div>`;
+ $("dPlay").onclick=()=>say(cur.pt).catch(e=>alert(e.message))}
+function drillStat(){const s=LS.get("pl_drill",{ok:0,n:0});$("dStat").textContent=s.n?`Правильно собрано: ${s.ok} из ${s.n}`:""}
+$("dNew").onclick=newTask;
+$("dShow").onclick=()=>showAnswer();
+$("dMic").onclick=()=>micFlow($("dMic"),"🎤 Сказать",async wav=>{
+  const r=await assess(wav,cur.pt);
+  if(r.none){$("dRes").innerHTML=`<div class="err">Не расслышал. Скажите ещё раз, громче.</div>`;return}
+  const wrong=r.words.filter(x=>x.err==="Omission"||x.err==="Insertion");
+  const okForm=wrong.length===0&&(r.comp==null||r.comp>=80);
+  const s=LS.get("pl_drill",{ok:0,n:0});s.n++;if(okForm)s.ok++;LS.set("pl_drill",s);
+  const sc=r.pron!=null?r.pron:r.acc;saveScore(cur.id,okForm?sc:0);
+  const head=okForm?`<div><b style="color:var(--ok)">✓ Фраза собрана верно!</b> Произношение: <span class="score">${Math.round(sc)}/100</span></div>`
+    :`<div><b style="color:var(--bad)">✗ Фраза собрана не так.</b> Распознано: «${esc(r.text)}»</div>`;
+  showAnswer(head+`<div>${wordsHtml(r)}</div>`);drillStat();
+}).catch(e=>$("dRes").innerHTML=`<div class="err">${esc(e.message||e)}</div>`);
+
+/* ===================== GEMINI: УЧИТЕЛЬ ===================== */
+let SYS=`You are a warm, patient teacher of EUROPEAN Portuguese (Portugal, Lisbon norm) for a Russian-speaking adult man (born 1962, Ukrainian, living in Portugal), an absolute beginner. This is Lesson 1 of a course based on Dmitry Petrov's method (verb matrix).
+Allowed vocabulary ONLY: greetings (olá, bom dia, boa tarde, boa noite, obrigado, por favor, desculpe, até logo, muito prazer, como se chama), pronouns eu, tu, ele, ela, nós, eles; verbs falar, morar, trabalhar in presente, pretérito perfeito and future with ir + infinitive (vou falar); sim, não, onde, aqui, em Portugal, em Lisboa, português, russo, ucraniano, inglês, muito, hoje, ontem, amanhã.
+Rules:
+- Strictly European Portuguese. Address the student with "tu". Never use Brazilian forms.
+- Each reply: 1-2 very short sentences (max 12 words total), then a simple question so the student can answer using the verb table. Vary tenses (present, past, future).
+- The student's text comes from automatic speech recognition: ignore punctuation and capitalization. If it is unintelligible, kindly ask to repeat in simple Portuguese.
+- If the student's sentence has a grammar or word error, explain it briefly in Russian in "fix_ru" and give the correct Portuguese sentence; otherwise "fix_ru" is "".
+Answer ONLY with JSON: {"pt":"your reply in European Portuguese","translit":"approximate Russian Cyrillic transcription of pt with European pronunciation (reduced unstressed vowels, s before consonant and at word end = ш)","ru":"Russian translation of pt","fix_ru":"correction in Russian or empty"}`;
+if(FEMALE)SYS=SYS.replace("a Russian-speaking adult man (born 1962, Ukrainian, living in Portugal)","a Russian-speaking adult woman (Ukrainian, living in Portugal)").replace("greetings (olá, bom dia, boa tarde, boa noite, obrigado,","greetings (olá, bom dia, boa tarde, boa noite, obrigada (the student is a woman),");
+let gemModel=null,chat=[];
+function verNum(n){return (n.match(/\d+(\.\d+)?/g)||["0"]).map(Number)}
+async function pickModel(){
+ if(key("m_gemini")){gemModel=key("m_gemini").replace(/^models\//,"");return gemModel}
+ if(gemModel)return gemModel;
+ try{
+  const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":key("k_gemini")}});
+  if(r.ok){const j=await r.json();const ms=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""));
+   const bad=/(tts|audio|live|image|embed|vision|robotics|computer|lite|thinking|exp)/i;
+   let c=ms.filter(n=>/flash/i.test(n)&&!bad.test(n)&&!/preview/i.test(n));
+   if(!c.length)c=ms.filter(n=>/flash/i.test(n)&&!bad.test(n));
+   c.sort((a,b)=>((verNum(b)[0]||0)-(verNum(a)[0]||0))||(a.length-b.length));
+   if(c.length){gemModel=c[0];return gemModel}}
+ }catch(e){}
+ gemModel="gemini-2.5-flash";return gemModel;
+}
+async function gemini(userText){
+ if(!key("k_gemini"))throw new Error("Нет ключа Gemini: откройте ⚙︎ Настройки.");
+ const m=await pickModel();
+ chat.push({role:"user",parts:[{text:userText}]});
+ for(let a=0;a<3;a++){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`,{method:"POST",
+   headers:{"x-goog-api-key":key("k_gemini"),"Content-Type":"application/json"},
+   body:JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:chat,generationConfig:{responseMimeType:"application/json",temperature:0.6}})});
+  if(r.status===429){const t=await r.text();let sec=0;try{const d=(JSON.parse(t).error.details||[]).find(x=>x.retryDelay);if(d)sec=parseFloat(d.retryDelay)}catch(e){}
+   if(sec>0&&sec<=60&&a<2){await sleep((sec+1)*1000);continue}
+   chat.pop();throw new Error("Лимит бесплатного Gemini исчерпан"+(sec>60||!sec?" (вероятно, дневной — сбросится в 08:00)":"")+".")}
+  if(r.status===404){chat.pop();throw new Error(`Модель «${m}» не найдена. Откройте ⚙︎ Настройки и очистите поле модели (или впишите другую).`)}
+  if(!r.ok){chat.pop();throw new Error("Gemini "+r.status+": "+(await r.text()).slice(0,200))}
+  const j=await r.json();const txt=(((j.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||"").join("")||"";
+  let o;try{o=JSON.parse(txt.replace(/^```(json)?|```$/g,"").trim())}catch(e){o={pt:txt,translit:"",ru:"",fix_ru:""}}
+  chat.push({role:"model",parts:[{text:JSON.stringify(o)}]});
+  return o;
+ }
+}
+function addBubble(cls,html){const d=document.createElement("div");d.className="bubble "+cls;d.innerHTML=html;$("chatLog").appendChild(d);d.scrollIntoView({behavior:"smooth",block:"end"});return d}
+async function teacherTurn(userText){
+ const wait=addBubble("tu",`<span class="muted">Учитель думает…</span>`);
+ try{const o=await gemini(userText);
+  wait.innerHTML=(o.fix_ru?`<div style="color:var(--warn)">✎ ${esc(o.fix_ru)}</div>`:"")+
+   `<div class="pt">${esc(o.pt||"")}</div><div class="tr">${esc(o.translit||"")}</div><div class="ru">${esc(o.ru||"")}</div>
+   <button class="b s">▶ Повторить</button><button class="b s">🐢</button>`;
+  const [b1,b2]=wait.querySelectorAll("button");b1.onclick=()=>say(o.pt).catch(()=>{});b2.onclick=()=>say(o.pt,{slow:true}).catch(()=>{});
+  await say(o.pt).catch(e=>wait.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`));
+ }catch(e){wait.innerHTML=`<div class="err">${esc(e.message||e)}</div>`}
+}
+$("cStart").onclick=async()=>{chat=[];$("chatLog").innerHTML="";$("cMic").disabled=false;$("cSend").disabled=false;
+ await teacherTurn("(Начни урок: поздоровайся со мной и задай первый простой вопрос.)")};
+$("cReset").onclick=()=>{chat=[];$("chatLog").innerHTML="";$("cMic").disabled=true;$("cSend").disabled=true};
+$("cMic").onclick=()=>micFlow($("cMic"),"🎤 Ответить",async wav=>{
+  const t=await recognize(wav);
+  if(!t){addBubble("me",`<span class="muted">(не расслышал — попробуйте ещё раз)</span>`);return}
+  addBubble("me",esc(t));await teacherTurn(t);
+}).catch(e=>addBubble("tu",`<div class="err">${esc(e.message||e)}</div>`));
+$("cSend").onclick=async()=>{const t=$("cText").value.trim();if(!t)return;$("cText").value="";addBubble("me",esc(t));await teacherTurn(t)};
+$("cText").addEventListener("keydown",e=>{if(e.key==="Enter")$("cSend").click()});
+
+/* ===================== ПРОГРЕСС ===================== */
+function renderProg(){
+ const p=LS.get("pl_prog",{});const all=[...GREET.map((x,i)=>["g"+i,x]),...QN.map((x,i)=>["q"+i,x]),...PHR.map((x,i)=>["p"+i,x])];
+ const rows=all.map(([id,x])=>{const e=p[id];return `<tr><td>${esc(x.pt)}</td><td>${e?e.best:"—"}</td><td>${e?e.n:0}</td></tr>`}).join("");
+ const weak=all.filter(([id])=>p[id]&&p[id].best<70).map(([,x])=>esc(x.pt));
+ const ds=LS.get("pl_drill",{ok:0,n:0});
+ $("progBox").innerHTML=`<p>Тренажёр: правильно собрано <b>${ds.ok}</b> из <b>${ds.n}</b>.</p>`+
+  (weak.length?`<p><b>Повторить</b> (лучший результат ниже 70): ${weak.join(" · ")}</p>`:"")+
+  `<table class="m"><tr><th>Фраза</th><th>Лучший балл</th><th>Попыток</th></tr>${rows}</table>`;
+}
+$("pClear").onclick=()=>{if(confirm("Сбросить весь прогресс урока?")){LS.set("pl_prog",{});LS.set("pl_drill",{ok:0,n:0});renderProg();drillStat()}};
+
+/* ===================== НАСТРОЙКИ ===================== */
+$("sSave").onclick=()=>{saveKeys();gemModel=null;$("sRes").innerHTML=`<span style="color:var(--ok)">Сохранено.</span>`};
+$("sTest").onclick=async()=>{saveKeys();gemModel=null;let h="";
+ try{await ttsBlob("Olá!","0%");h+=`<div style="color:var(--ok)">✓ Azure: озвучка работает</div>`}catch(e){h+=`<div class="err">✗ Azure: ${esc(e.message)}</div>`}
+ try{if(!key("k_gemini"))throw new Error("нет ключа");const m=await pickModel();h+=`<div style="color:var(--ok)">✓ Gemini: ключ есть, модель для учителя: <b>${esc(m)}</b></div>`}catch(e){h+=`<div class="err">✗ Gemini: ${esc(e.message)}</div>`}
+ $("sRes").innerHTML=h};
+try{const r=localStorage.getItem("pl_rate");if(r)$("rate").value=r}catch(e){}
+$("gender").value=FEMALE?"f":"m";$("gender").onchange=()=>{try{localStorage.setItem("pl_gender",$("gender").value)}catch(e){};location.reload()};
+$("rate").onchange=()=>{try{localStorage.setItem("pl_rate",$("rate").value)}catch(e){}};
+
+
+/* ===================== ИНТЕРВАЛЬНОЕ ПОВТОРЕНИЕ (как в Anki, SM-2) ===================== */
+const WORDS=[
+{pt:"eu",tr:"эу",ru:"я"},{pt:"tu",tr:"ту",ru:"ты"},{pt:"ele",tr:"эл",ru:"он"},{pt:"ela",tr:"эла",ru:"она"},{pt:"nós",tr:"нóш",ru:"мы"},{pt:"eles",tr:"элыш",ru:"они"},
+{pt:"falar",tr:"фалáр",ru:"говорить"},{pt:"morar",tr:"мурáр",ru:"жить (проживать)"},{pt:"trabalhar",tr:"трабалья́р",ru:"работать"},
+{pt:"sim",tr:"сим",ru:"да"},{pt:"não",tr:"нáу(н)",ru:"нет; не"},{pt:"onde",tr:"óнд",ru:"где"},{pt:"aqui",tr:"аки́",ru:"здесь"},
+{pt:"hoje",tr:"óж",ru:"сегодня"},{pt:"ontem",tr:"óнтай(н)",ru:"вчера"},{pt:"amanhã",tr:"амынья́(н)",ru:"завтра"},{pt:"muito",tr:"мýйту",ru:"много; очень"},
+{pt:"português",tr:"пуртугéш",ru:"португальский (язык)"},{pt:"russo",tr:"рýсу",ru:"русский (язык)"},{pt:"ucraniano",tr:"укрынья́ну",ru:"украинский (язык)"},{pt:"inglês",tr:"инглéш",ru:"английский (язык)"}
+];
+const DECK=[...GREET.map(x=>({...x,id:"L1g:"+x.pt,kind:"Фраза"})),...WORDS.map(x=>({...x,id:"L1w:"+x.pt,kind:"Слово"})),...PHR.map(x=>({...x,id:"L1p:"+x.pt,kind:"Фраза"}))];
+const SRS_CFG={newPerDay:10,steps:[1,10],relearn:[10],grad:1,easyIvl:4,startEase:2.5,hardMul:1.2,easyBonus:1.3,minEase:1.3};
+const MIN=60000;
+function dayNum(t){return Math.floor((t-4*3600000-new Date(t).getTimezoneOffset()*MIN)/86400000)} // день начинается в 04:00, как в Anki
+const today=()=>dayNum(Date.now());
+function srsAll(){return LS.get("pl_srs",{})}
+function srsSave(a){LS.set("pl_srs",a)}
+function srsMeta(){const m=LS.get("pl_srsmeta",{});if(m.day!==today()){m.day=today();m.newToday=0;m.dayDone=false;m.eveDone=false}return m}
+function isDue(c,now){if(!c)return false;if(c.state==="review")return c.dueDay<=dayNum(now);return c.due<=now}
+function fmtIvl(c){if(c.state==="review")return c.ivl+" дн.";const m=Math.round((c.due-Date.now())/MIN);return m<1?"<1 мин":m+" мин"}
+function schedule(c0,g,now){
+ const c=Object.assign({state:"new",step:0,ease:SRS_CFG.startEase,ivl:0,lapses:0,reps:0},c0||{});
+ c.reps++;c.last=now;c.lastDay=dayNum(now);
+ const learnLike=c.state==="new"||c.state==="learn"||c.state==="relearn";
+ if(learnLike){
+  const steps=c.state==="relearn"?SRS_CFG.relearn:SRS_CFG.steps;
+  if(c.state==="new")c.state="learn";
+  const grad=(ivl)=>{c.state="review";c.ivl=ivl;c.dueDay=dayNum(now)+ivl;delete c.due};
+  if(g===1){c.step=0;c.due=now+steps[0]*MIN}
+  else if(g===2){c.due=now+(c.step===0&&steps.length>1?(steps[0]+steps[1])/2:steps[c.step])*MIN}
+  else if(g===3){c.step++;if(c.step>=steps.length){grad(c.state==="relearn"?Math.max(1,c.ivl):SRS_CFG.grad)}else c.due=now+steps[c.step]*MIN}
+  else {grad(c.state==="relearn"?Math.max(1,c.ivl)+1:SRS_CFG.easyIvl)}
+ }else{
+  if(g===1){c.lapses++;c.ease=Math.max(SRS_CFG.minEase,c.ease-0.2);c.ivl=1;c.state="relearn";c.step=0;c.due=now+SRS_CFG.relearn[0]*MIN;delete c.dueDay}
+  else{
+   let ivl;
+   if(g===2){ivl=Math.max(c.ivl+1,Math.round(c.ivl*SRS_CFG.hardMul));c.ease=Math.max(SRS_CFG.minEase,c.ease-0.15)}
+   else if(g===3){ivl=Math.max(c.ivl+1,Math.round(c.ivl*c.ease))}
+   else{ivl=Math.max(c.ivl+2,Math.round(c.ivl*c.ease*SRS_CFG.easyBonus));c.ease+=0.15}
+   c.ivl=Math.min(ivl,3650);c.dueDay=dayNum(now)+c.ivl;
+  }
+ }
+ return c;
+}
+/* очередь */
+let Q=[],qMode=null,qCard=null,qSug=3,qAnswered=false;
+function buildDay(){
+ const a=srsAll(),m=srsMeta(),now=Date.now();
+ const due=DECK.filter(d=>a[d.id]&&isDue(a[d.id],now+20*MIN));
+ const fresh=DECK.filter(d=>!a[d.id]).slice(0,Math.max(0,SRS_CFG.newPerDay-m.newToday));
+ return [...due.sort(()=>Math.random()-.5),...fresh];
+}
+function buildEve(){const a=srsAll();return DECK.filter(d=>a[d.id]&&a[d.id].lastDay===today()).sort(()=>Math.random()-.5).slice(0,25)}
+function renderToday(){
+ const a=srsAll(),m=srsMeta(),now=Date.now();
+ const dueN=DECK.filter(d=>a[d.id]&&isDue(a[d.id],now+20*MIN)).length;
+ const newN=Math.min(DECK.filter(d=>!a[d.id]).length,Math.max(0,SRS_CFG.newPerDay-m.newToday));
+ const eveN=buildEve().length;
+ const known=DECK.filter(d=>a[d.id]&&a[d.id].state==="review").length;
+ const d=new Date().toLocaleDateString("ru",{weekday:"long",day:"numeric",month:"long"});
+ $("todayBox").innerHTML=`<p class="muted">${d}</p>
+ <p><b>☀️ Дневное занятие</b> ${m.dayDone?'<span style="color:var(--ok)">✓ выполнено</span>':''}<br>К повторению: <b>${dueN}</b> · новых: <b>${newN}</b></p>
+ <button class="b" id="goDay" ${dueN+newN?"":"disabled"}>Начать повторение</button>
+ <p style="margin-top:14px"><b>🌙 Вечернее повторение (5 мин)</b> ${m.eveDone?'<span style="color:var(--ok)">✓ выполнено</span>':''}<br>Пройдено сегодня: <b>${eveN}</b> карточек</p>
+ <button class="b s" id="goEve" ${eveN?"":"disabled"}>Начать вечернее повторение</button>
+ ${(()=>{const t=LS.get("pl_lastbackup",0),has=Object.keys(a).length;return has&&Date.now()-t>7*86400000?`<p style="color:var(--warn)">💾 Прогресс не сохранялся больше недели. ⚙︎ Настройки → «Сохранить прогресс в файл».</p>`:""})()}
+ <p class="muted" style="margin-top:14px">Всего карточек в уроке: ${DECK.length} · уже в долгом повторении: ${known}</p>`;
+ $("goDay").onclick=()=>startQ("day");$("goEve").onclick=()=>startQ("eve");
+}
+function startQ(mode){qMode=mode;Q=mode==="day"?buildDay():buildEve();$("revCard").style.display="block";nextCard()}
+function nextCard(){
+ $("rvRes").innerHTML="";$("rvGrades").innerHTML="";$("rvNew").innerHTML="";qAnswered=false;$("rvActions").style.display="block";
+ if(!Q.length){const m=srsMeta();if(qMode==="day")m.dayDone=true;else m.eveDone=true;LS.set("pl_srsmeta",m);
+  $("revCard").style.display="none";renderToday();
+  $("todayBox").insertAdjacentHTML("afterbegin",`<p style="color:var(--ok)"><b>${qMode==="day"?"Дневное повторение закончено! Теперь можно перейти к уроку.":"Вечернее повторение закончено. Спокойной ночи! Boa noite! (Бóа нóйт!)"}</b></p>`);return}
+ qCard=Q.shift();const a=srsAll(),isNew=!a[qCard.id];
+ $("rvKind").textContent=(isNew?"🆕 Новая карточка · ":"")+qCard.kind+" · скажите по-португальски:";
+ $("rvFront").textContent=qCard.ru;
+ if(isNew&&qMode==="day"){$("rvNew").innerHTML=`<div class="pt">${esc(qCard.pt)}</div><div class="tr">${esc(qCard.tr)}</div><p class="muted">Новое слово: послушайте и повторите вслух.</p>`;say(qCard.pt).catch(()=>{})}
+ $("rvLeft").textContent="Осталось: "+(Q.length+1);
+}
+function reveal(r){
+ qAnswered=true;$("rvActions").style.display="none";
+ $("rvRes").innerHTML=(r?`<div>${r}</div>`:"")+`<div class="card"><div class="pt">${esc(qCard.pt)}</div><div class="tr">${esc(qCard.tr)}</div><button class="b s" id="rvPlay">▶ Слушать</button></div>`;
+ $("rvPlay").onclick=()=>say(qCard.pt).catch(()=>{});say(qCard.pt).catch(()=>{});
+ const a=srsAll(),now=Date.now();
+ if(qMode==="eve"){
+  $("rvGrades").innerHTML=`<button class="b" data-g="ok">✓ Помню</button><button class="b s" data-g="no">✗ Не вспомнил</button>`;
+  $("rvGrades").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+   if(b.dataset.g==="no"){const c=a[qCard.id];if(c){if(c.state==="review"&&c.dueDay>today()+1)c.dueDay=today()+1;else if(c.state!=="review")c.due=Math.min(c.due||now,now+10*MIN);a[qCard.id]=c;srsSave(a)}}
+   nextCard()});
+  return;
+ }
+ const names=["","Снова","Трудно","Хорошо","Легко"];
+ $("rvGrades").innerHTML=`<p class="muted">Насколько легко вспомнили? Подсвечен вариант, который предлагает приложение.</p>`+[1,2,3,4].map(g=>{const c=schedule(a[qCard.id],g,now);
+  return `<button class="b ${g===qSug?"":"s"}" data-g="${g}">${names[g]}<br><small>${fmtIvl(c)}</small></button>`}).join("");
+ $("rvGrades").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  const g=+b.dataset.g,all=srsAll(),wasNew=!all[qCard.id];const c=schedule(all[qCard.id],g,Date.now());all[qCard.id]=c;srsSave(all);
+  if(wasNew){const m=srsMeta();m.newToday++;LS.set("pl_srsmeta",m)}
+  if(c.state!=="review"&&c.due<=Date.now()+20*MIN){Q.splice(Math.min(Q.length,3),0,qCard)}
+  nextCard()});
+}
+$("rvShow").onclick=()=>{qSug=1;reveal("")};
+$("rvMic").onclick=()=>micFlow($("rvMic"),"🎤 Сказать по-португальски",async wav=>{
+ const r=await assess(wav,qCard.pt);
+ if(r.none){$("rvRes").innerHTML=`<div class="err">Не расслышал. Скажите ещё раз, громче.</div>`;return}
+ const wrong=r.words.some(x=>x.err==="Omission"||x.err==="Insertion")||(r.comp!=null&&r.comp<80);
+ const sc=r.pron!=null?r.pron:r.acc;
+ qSug=wrong?1:(sc<60?2:3);
+ reveal((wrong?`<b style="color:var(--bad)">✗ Не совсем. Распознано: «${esc(r.text)}»</b>`:`<b style="color:var(--ok)">✓ Верно!</b> Произношение: <span class="score">${Math.round(sc)}/100</span>`)+`<div>${wordsHtml(r)}</div>`);
+}).catch(e=>$("rvRes").innerHTML=`<div class="err">${esc(e.message||e)}</div>`);
+
+
+/* ===================== РЕЗЕРВНАЯ КОПИЯ ===================== */
+const BK_KEYS=["pl_srs","pl_srsmeta","pl_prog","pl_drill","pl_usage","pl_gender","pl_rate"];
+function bkInfo(){const t=LS.get("pl_lastbackup",0);$("bkRes").innerHTML=t?`<span class="muted">Последнее сохранение: ${new Date(t).toLocaleString("ru")}</span>`:`<span class="muted">Резервных копий ещё не было.</span>`}
+$("bkSave").onclick=()=>{
+ const data={};BK_KEYS.forEach(k=>{try{const v=localStorage.getItem(k);if(v!=null)data[k]=v}catch(e){}});
+ const out={app:"portugues-pt-PT",version:1,saved:new Date().toISOString(),data};
+ const blob=new Blob([JSON.stringify(out,null,1)],{type:"application/json"});
+ const a=document.createElement("a");const d=new Date();
+ a.download=`portugues-progresso-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
+ a.href=URL.createObjectURL(blob);document.body.appendChild(a);a.click();a.remove();
+ LS.set("pl_lastbackup",Date.now());bkInfo();
+ $("bkRes").insertAdjacentHTML("afterbegin",`<div style="color:var(--ok)">✓ Файл «${a.download}» сохранён в папку «Загрузки».</div>`);
+};
+$("bkLoad").onclick=()=>$("bkFile").click();
+$("bkFile").onchange=async()=>{
+ const f=$("bkFile").files[0];$("bkFile").value="";if(!f)return;
+ try{
+  const o=JSON.parse(await f.text());
+  if(o.app!=="portugues-pt-PT"||!o.data)throw new Error("Это не файл прогресса этого приложения.");
+  if(!confirm(`Загрузить прогресс от ${new Date(o.saved).toLocaleString("ru")}? Текущий прогресс в этом браузере будет заменён.`))return;
+  BK_KEYS.forEach(k=>{try{if(o.data[k]!=null)localStorage.setItem(k,o.data[k]);else localStorage.removeItem(k)}catch(e){}});
+  LS.set("pl_lastbackup",Date.now());
+  alert("Прогресс загружен. Страница перезагрузится.");location.reload();
+ }catch(e){$("bkRes").innerHTML=`<div class="err">Не удалось загрузить: ${esc(e.message||e)}</div>`}
+};
+bkInfo();
+
+/* ===================== НАВИГАЦИЯ И СТАРТ ===================== */
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x===b));
+ document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id==="t-"+b.dataset.t));
+ if(b.dataset.t==="prog")renderProg();
+ if(b.dataset.t==="today")renderToday();
+});
+loadKeys();showUsage();
+bindCards($("greetList"),GREET,"g");bindCards($("qnList"),QN,"q");bindCards($("phrList"),PHR,"p");
+$("verbSel").onchange=renderMatrix;renderMatrix();drillStat();
+if(Object.keys(LS.get("pl_srs",{})).length)document.querySelector('#nav button[data-t="today"]').click();
+if(!key("k_azure")){document.querySelector('#nav button[data-t="set"]').click();$("sRes").innerHTML=`<div class="err">Введите ключи и нажмите «Сохранить».</div>`}
+</script>
+</body></html>
