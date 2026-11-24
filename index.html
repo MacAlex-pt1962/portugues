@@ -39,7 +39,7 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 </head>
 <body><main>
 <h1>Урок 1. Скелет языка</h1>
-<p class="muted" style="margin:0">Версия 1.2 · 24.11.2026</p>
+<p class="muted" style="margin:0">Версия 1.3 · 24.11.2026</p>
 <p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
 <nav id="nav">
 <button data-t="today">📅 Сегодня</button>
@@ -463,19 +463,25 @@ async function teacherTurn(userText){
  try{const o=await gemini(userText);
   wait.innerHTML=(o.fix_ru?`<div style="color:var(--warn)">✎ ${esc(o.fix_ru)}</div>`:"")+
    `<div class="pt">${esc(o.pt||"")}</div><div class="tr">${esc(o.translit||"")}</div><div class="ru">${esc(o.ru||"")}</div>
-   <button class="b s">▶ Повторить</button><button class="b s">🐢</button>`;
-  const [b1,b2]=wait.querySelectorAll("button");b1.onclick=()=>say(o.pt).catch(()=>{});b2.onclick=()=>say(o.pt,{slow:true}).catch(()=>{});
+   <button class="b s">▶ Повторить</button><button class="b s">🐢</button><button class="b mic">🎤 Ответить</button>`;
+  document.querySelectorAll("#chatLog .bubble button.mic").forEach(x=>{if(!wait.contains(x))x.remove()});
+  const [b1,b2,b3]=wait.querySelectorAll("button");b1.onclick=()=>say(o.pt).catch(()=>{});b2.onclick=()=>say(o.pt,{slow:true}).catch(()=>{});
+  b3.onclick=()=>replyMic(b3);b3.scrollIntoView({behavior:"smooth",block:"center"});
   await say(o.pt).catch(e=>wait.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`));
  }catch(e){wait.innerHTML=`<div class="err">${esc(e.message||e)}</div><button class="b s">↻ Повторить</button>`;wait.querySelector("button").onclick=()=>{wait.remove();teacherTurn(userText)}}
 }
 $("cStart").onclick=async()=>{chat=[];$("chatLog").innerHTML="";$("cMic").disabled=false;$("cSend").disabled=false;
  await teacherTurn("(Начни урок: поздоровайся со мной и задай первый простой вопрос.)")};
 $("cReset").onclick=()=>{chat=[];$("chatLog").innerHTML="";$("cMic").disabled=true;$("cSend").disabled=true};
-$("cMic").onclick=()=>micFlow($("cMic"),"🎤 Ответить",async wav=>{
+function replyMic(btn){
+ return micFlow(btn,"🎤 Ответить",async wav=>{
   const t=await recognize(wav);
   if(!t){addBubble("me",`<span class="muted">(не расслышал — попробуйте ещё раз)</span>`);return}
+  btn.remove&&btn!==$("cMic")&&btn.remove();
   addBubble("me",esc(t));await teacherTurn(t);
-}).catch(e=>addBubble("tu",`<div class="err">${esc(e.message||e)}</div>`));
+ }).catch(e=>addBubble("tu",`<div class="err">${esc(e.message||e)}</div>`));
+}
+$("cMic").onclick=()=>replyMic($("cMic"));
 $("cSend").onclick=async()=>{const t=$("cText").value.trim();if(!t)return;$("cText").value="";addBubble("me",esc(t));await teacherTurn(t)};
 $("cText").addEventListener("keydown",e=>{if(e.key==="Enter")$("cSend").click()});
 
