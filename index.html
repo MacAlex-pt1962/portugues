@@ -35,11 +35,16 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 .bubble{border-radius:12px;padding:10px 12px;margin:8px 0;max-width:90%}
 .me{background:var(--acc2);margin-left:auto}.tu{background:var(--card);border:1px solid var(--line)}
 .legend{font-size:13px}
+.sticky{position:sticky;top:var(--navh,56px);z-index:4;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+table.g3{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}table.g3 td,table.g3 th{border:1px solid var(--line);padding:4px 6px;vertical-align:top;text-align:left}
+table.g3 td.fm{font-size:13px;color:var(--muted);line-height:1.35}table.g3 td.done{background:#d8f3e3;color:#0c5a2e;font-weight:600}
+table.g3 td.cur{outline:3px solid var(--mid);outline-offset:-3px}
+@media (prefers-color-scheme:dark){table.g3 td.done{background:#1d4a32;color:#bff0d2}}
 </style>
 </head>
 <body><main>
 <h1>Урок 1. Скелет языка</h1>
-<p class="muted" style="margin:0">Версия 1.6 · 24.11.2026</p>
+<p class="muted" style="margin:0">Версия 1.7 · 26.11.2026</p>
 <p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
 <nav id="nav">
 <button data-t="today">📅 Сегодня</button>
@@ -97,6 +102,12 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 </section>
 
 <section id="t-drill">
+<div class="card sticky" id="gridCard">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>Глагол:</b>
+<select id="dVerbSel" style="width:auto"><option value="falar">falar — говорить</option><option value="morar">morar — жить</option><option value="trabalhar">trabalhar — работать</option></select>
+<button class="b s" id="gClear" style="margin:0;padding:5px 10px;font-size:14px">Очистить таблицу</button></div>
+<div id="grid"></div>
+</div>
 <div class="card">
 <h2>Тренажёр «по Петрову»</h2>
 <p class="muted">Вы видите фразу по-русски. Соберите её по таблице и скажите по-португальски <b>вместе с местоимением</b> (eu, tu, ele, nós, eles). Потом проверьте себя.</p>
@@ -374,21 +385,47 @@ function renderMatrix(){
 /* ===================== ТРЕНАЖЁР ===================== */
 let cur=null;
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+const TENSES=[["past","Прошедшее"],["pres","Настоящее"],["fut","Будущее"]];
+const FORMS=[["?","❓ Вопрос"],["+","✅ Утверждение"],["-","❌ Отрицание"]];
+let dVerb="falar";try{dVerb=localStorage.getItem("pl_dverb")||"falar"}catch(e){}
+function formsOf(vk,t){const v=VERBS[vk];return PRON.map((p,i)=>p.pt+" "+(t==="pres"?v.pres[i][0]:t==="past"?v.past[i][0]:IR[i][0]+" "+v.inf[0]))}
+function gridGet(){return LS.get("pl_grid",{})}
+function renderGrid(){
+ const g=gridGet()[dVerb]||{};
+ let h=`<table class="g3"><tr><th></th>${TENSES.map(t=>`<th>${t[1]}</th>`).join("")}</tr>`;
+ h+=`<tr><td class="muted">формы</td>${TENSES.map(t=>`<td class="fm">${formsOf(dVerb,t[0]).map(esc).join("<br>")}</td>`).join("")}</tr>`;
+ FORMS.forEach(f=>{h+=`<tr><td>${f[1]}</td>${TENSES.map(t=>{const k=t[0]+"|"+f[0],v=g[k];
+   const isCur=cur&&cur.verb===dVerb&&cur.tense===t[0]&&cur.form===f[0];
+   return `<td class="${v?"done":""} ${isCur?"cur":""}">${v?"✓ "+esc(v):(isCur?"← сейчас":"")}</td>`}).join("")}</tr>`});
+ const n=Object.keys(g).length;
+ h+=`</table><div class="muted legend" style="margin-top:4px">❓ вопрос — та же фраза с интонацией · ❌ отрицание — <b>não</b> перед глаголом · Заполнено: <b>${n} из 9</b>${n===9?" 🎉 Таблица заполнена! Выберите другой глагол.":""}</div>`;
+ $("grid").innerHTML=h;
+}
 function makeTask(){
- const vk=Object.keys(VERBS)[Math.floor(Math.random()*3)],v=VERBS[vk];
- const i=Math.floor(Math.random()*5),tense=["pres","past","fut"][Math.floor(Math.random()*3)],form=["+","?","-"][Math.floor(Math.random()*3)];
+ const vk=dVerb,v=VERBS[vk];
+ const g=gridGet()[vk]||{};
+ const cells=[];TENSES.forEach(t=>FORMS.forEach(f=>{if(!g[t[0]+"|"+f[0]])cells.push([t[0],f[0]])}));
+ const all=[];TENSES.forEach(t=>FORMS.forEach(f=>all.push([t[0],f[0]])));
+ const pool=cells.length?cells:all;const [tense,form]=pool[Math.floor(Math.random()*pool.length)];
+ const i=Math.floor(Math.random()*5);
  let vf,vt;if(tense==="pres"){vf=v.pres[i][0];vt=v.pres[i][1]}else if(tense==="past"){vf=v.past[i][0];vt=v.past[i][1]}else{vf=IR[i][0]+" "+v.inf[0];vt=IR[i][1]+" "+v.inf[1]}
  const neg=form==="-";
  const pt=cap(PRON[i].pt+(neg?" não":"")+" "+vf+" "+v.obj.pt)+(form==="?"?"?":".");
  const tr=cap(PRON[i].tr+(neg?" нáу(н)":"")+" "+vt+" "+v.obj.tr)+(form==="?"?"?":".");
  const ru=cap(RUPRON[i]+(neg?" не":"")+" "+v.ruf[tense][i]+" "+v.obj.ru)+(form==="?"?"?":".");
- return {pt,tr,ru,id:"d|"+vk+"|"+tense+"|"+i+"|"+form};
+ return {pt,tr,ru,id:"d|"+vk+"|"+tense+"|"+i+"|"+form,verb:vk,tense,form};
 }
-function newTask(){cur=makeTask();$("dPrompt").textContent=cur.ru;$("dRes").innerHTML="";$("dMic").disabled=false;$("dShow").disabled=false}
+function newTask(){cur=makeTask();$("dPrompt").textContent=cur.ru;$("dRes").innerHTML="";$("dMic").disabled=false;$("dShow").disabled=false;renderGrid()}
 function showAnswer(extra){$("dRes").innerHTML=(extra||"")+`<div class="card"><div class="pt">${esc(cur.pt)}</div><div class="tr">${esc(cur.tr)}</div><button class="b s" id="dPlay">▶ Слушать правильный ответ</button></div>`;
  $("dPlay").onclick=()=>say(cur.pt).catch(e=>alert(e.message))}
 function drillStat(){const s=LS.get("pl_drill",{ok:0,n:0});$("dStat").textContent=s.n?`Правильно собрано: ${s.ok} из ${s.n}`:""}
 $("dNew").onclick=newTask;
+$("dVerbSel").value=dVerb;
+$("dVerbSel").onchange=()=>{dVerb=$("dVerbSel").value;try{localStorage.setItem("pl_dverb",dVerb)}catch(e){};cur=null;$("dPrompt").textContent="Нажмите «Новое задание»";$("dRes").innerHTML="";$("dMic").disabled=true;$("dShow").disabled=true;renderGrid()};
+$("gClear").onclick=()=>{if(confirm("Очистить таблицу для глагола "+dVerb+"?")){const g=gridGet();delete g[dVerb];LS.set("pl_grid",g);renderGrid()}};
+function setNavH(){document.documentElement.style.setProperty("--navh",($("nav").offsetHeight||56)+"px")}
+window.addEventListener("resize",setNavH);setTimeout(setNavH,0);
+renderGrid();
 $("dShow").onclick=()=>showAnswer();
 $("dMic").onclick=()=>micFlow($("dMic"),"🎤 Сказать",async wav=>{
   const r=await assess(wav,cur.pt);
@@ -396,6 +433,7 @@ $("dMic").onclick=()=>micFlow($("dMic"),"🎤 Сказать",async wav=>{
   const wrong=r.words.filter(x=>x.err==="Omission"||x.err==="Insertion");
   const okForm=wrong.length===0&&(r.comp==null||r.comp>=80);
   const s=LS.get("pl_drill",{ok:0,n:0});s.n++;if(okForm)s.ok++;LS.set("pl_drill",s);
+  if(okForm){const g=gridGet();g[cur.verb]=g[cur.verb]||{};g[cur.verb][cur.tense+"|"+cur.form]=cur.pt;LS.set("pl_grid",g);renderGrid()}
   const sc=r.pron!=null?r.pron:r.acc;saveScore(cur.id,okForm?sc:0);
   const head=okForm?`<div><b style="color:var(--ok)">✓ Фраза собрана верно!</b> Произношение: <span class="score">${Math.round(sc)}/100</span></div>`
     :`<div><b style="color:var(--bad)">✗ Фраза собрана не так.</b> Распознано: «${esc(r.text)}»</div>`;
@@ -689,7 +727,7 @@ $("rvMic").onclick=()=>micFlow($("rvMic"),"🎤 Сказать по-португ
 
 
 /* ===================== РЕЗЕРВНАЯ КОПИЯ ===================== */
-const BK_KEYS=["pl_srs","pl_srsmeta","pl_prog","pl_drill","pl_usage","pl_gender","pl_rate"];
+const BK_KEYS=["pl_grid","pl_dverb","pl_srs","pl_srsmeta","pl_prog","pl_drill","pl_usage","pl_gender","pl_rate"];
 function bkInfo(){const t=LS.get("pl_lastbackup",0);$("bkRes").innerHTML=t?`<span class="muted">Последнее сохранение: ${new Date(t).toLocaleString("ru")}</span>`:`<span class="muted">Резервных копий ещё не было.</span>`}
 $("bkSave").onclick=()=>{
  const data={};BK_KEYS.forEach(k=>{try{const v=localStorage.getItem(k);if(v!=null)data[k]=v}catch(e){}});
