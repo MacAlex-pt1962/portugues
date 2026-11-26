@@ -44,7 +44,7 @@ table.g3 td.cur{outline:3px solid var(--mid);outline-offset:-3px}
 </head>
 <body><main>
 <h1>Урок 1. Скелет языка</h1>
-<p class="muted" style="margin:0">Версия 1.8 · 26.11.2026</p>
+<p class="muted" style="margin:0">Версия 1.9 · 26.11.2026</p>
 <p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
 <nav id="nav">
 <button data-t="today">📅 Сегодня</button>
@@ -697,10 +697,21 @@ function nextCard(){
  if(isNew&&qMode==="day"){$("rvNew").innerHTML=`<div class="pt">${esc(qCard.pt)}</div><div class="tr">${esc(qCard.tr)}</div><p class="muted">Новое слово: послушайте и повторите вслух.</p>`;say(qCard.pt).catch(()=>{})}
  $("rvLeft").textContent="Осталось: "+(Q.length+1);
 }
-function reveal(r){
+function judge(r){
+ const wrong=r.words.some(x=>x.err==="Omission"||x.err==="Insertion")||(r.comp!=null&&r.comp<80);
+ const sc=r.pron!=null?r.pron:r.acc;
+ return {sug:wrong?1:(sc<60?2:3),html:(wrong?`<b style="color:var(--bad)">✗ Не совсем. Распознано: «${esc(r.text)}»</b>`:`<b style="color:var(--ok)">✓ Верно!</b> Произношение: <span class="score">${Math.round(sc)}/100</span>`)+`<div>${wordsHtml(r)}</div>`};
+}
+function reveal(r,noPlay){
  qAnswered=true;$("rvActions").style.display="none";
- $("rvRes").innerHTML=(r?`<div>${r}</div>`:"")+`<div class="card"><div class="pt">${esc(qCard.pt)}</div><div class="tr">${esc(qCard.tr)}</div><button class="b s" id="rvPlay">▶ Слушать</button></div>`;
- $("rvPlay").onclick=()=>say(qCard.pt).catch(()=>{});say(qCard.pt).catch(()=>{});
+ $("rvRes").innerHTML=`<div id="rvTry">${r||""}</div><div class="card"><div class="pt">${esc(qCard.pt)}</div><div class="tr">${esc(qCard.tr)}</div><button class="b s" id="rvPlay">▶ Слушать</button><button class="b s" id="rvSlow">🐢</button><button class="b mic" id="rvRetry">🎤 Сказать ещё раз</button></div>`;
+ $("rvPlay").onclick=()=>say(qCard.pt).catch(()=>{});$("rvSlow").onclick=()=>say(qCard.pt,{slow:true}).catch(()=>{});
+ $("rvRetry").onclick=()=>micFlow($("rvRetry"),"🎤 Сказать ещё раз",async wav=>{
+   const r2=await assess(wav,qCard.pt);
+   if(r2.none){$("rvTry").innerHTML=`<div class="err">Не расслышал. Скажите ещё раз, громче и ближе к микрофону.</div>`;return}
+   const j=judge(r2);qSug=j.sug;reveal(`<div class="muted">Новая попытка:</div>`+j.html,true);
+ }).catch(e=>{$("rvTry").innerHTML=`<div class="err">${esc(e.message||e)}</div>`});
+ if(!noPlay)say(qCard.pt).catch(()=>{});
  const a=srsAll(),now=Date.now();
  if(qMode==="eve"){
   $("rvGrades").innerHTML=`<button class="b" data-g="ok">✓ Помню</button><button class="b s" data-g="no">✗ Не вспомнил</button>`;
@@ -722,10 +733,7 @@ $("rvShow").onclick=()=>{qSug=1;reveal("")};
 $("rvMic").onclick=()=>micFlow($("rvMic"),"🎤 Сказать по-португальски",async wav=>{
  const r=await assess(wav,qCard.pt);
  if(r.none){$("rvRes").innerHTML=`<div class="err">Не расслышал. Скажите ещё раз, громче.</div>`;return}
- const wrong=r.words.some(x=>x.err==="Omission"||x.err==="Insertion")||(r.comp!=null&&r.comp<80);
- const sc=r.pron!=null?r.pron:r.acc;
- qSug=wrong?1:(sc<60?2:3);
- reveal((wrong?`<b style="color:var(--bad)">✗ Не совсем. Распознано: «${esc(r.text)}»</b>`:`<b style="color:var(--ok)">✓ Верно!</b> Произношение: <span class="score">${Math.round(sc)}/100</span>`)+`<div>${wordsHtml(r)}</div>`);
+ const j=judge(r);qSug=j.sug;reveal(j.html);
 }).catch(e=>$("rvRes").innerHTML=`<div class="err">${esc(e.message||e)}</div>`);
 
 
