@@ -37,14 +37,14 @@ table.m td.c{cursor:pointer}table.m td.c:hover{background:var(--acc2)}
 .legend{font-size:13px}
 .sticky{position:sticky;top:var(--navh,56px);z-index:4;box-shadow:0 4px 12px rgba(0,0,0,.08)}
 table.g3{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}table.g3 td,table.g3 th{border:1px solid var(--line);padding:4px 6px;vertical-align:top;text-align:left}
-table.g3 td.fm{font-size:13px;color:var(--muted);line-height:1.35}table.g3 td.done{background:#d8f3e3;color:#0c5a2e;font-weight:600}
+table.g3 td.fm{font-size:13px;line-height:1.5;white-space:nowrap}table.g3 td.pl{color:var(--ink)}table.g3 td.done{background:#d8f3e3;color:#0c5a2e;font-weight:600}
 table.g3 td.cur{outline:3px solid var(--mid);outline-offset:-3px}
 @media (prefers-color-scheme:dark){table.g3 td.done{background:#1d4a32;color:#bff0d2}}
 </style>
 </head>
 <body><main>
 <h1>Урок 1. Скелет языка</h1>
-<p class="muted" style="margin:0">Версия 1.7 · 26.11.2026</p>
+<p class="muted" style="margin:0">Версия 1.8 · 26.11.2026</p>
 <p class="muted">Европейский португальский · метод «глагольной таблицы» · приветствия, глаголы <b>falar</b> (говорить), <b>morar</b> (жить), <b>trabalhar</b> (работать) в трёх временах.</p>
 <nav id="nav">
 <button data-t="today">📅 Сегодня</button>
@@ -393,7 +393,10 @@ function gridGet(){return LS.get("pl_grid",{})}
 function renderGrid(){
  const g=gridGet()[dVerb]||{};
  let h=`<table class="g3"><tr><th></th>${TENSES.map(t=>`<th>${t[1]}</th>`).join("")}</tr>`;
- h+=`<tr><td class="muted">формы</td>${TENSES.map(t=>`<td class="fm">${formsOf(dVerb,t[0]).map(esc).join("<br>")}</td>`).join("")}</tr>`;
+ const PL=["<b>eu</b> (эу) — я","<b>tu</b> (ту) — ты","<b>ele / ela</b> (эл / эла) — он / она","<b>nós</b> (нóш) — мы","<b>eles / elas</b> (элыш / элаш) — они"];
+ const vv=VERBS[dVerb];
+ const col=t=>vv[t]?vv[t].map(f=>`<b>${esc(f[0])}</b> <span class="muted">(${esc(f[1])})</span>`):IR.map(f=>`<b>${esc(f[0])} ${esc(vv.inf[0])}</b> <span class="muted">(${esc(f[1])} ${esc(vv.inf[1])})</span>`);
+ h+=`<tr><td class="fm pl">${PL.join("<br>")}</td>${TENSES.map(t=>`<td class="fm">${col(t[0]).join("<br>")}</td>`).join("")}</tr>`;
  FORMS.forEach(f=>{h+=`<tr><td>${f[1]}</td>${TENSES.map(t=>{const k=t[0]+"|"+f[0],v=g[k];
    const isCur=cur&&cur.verb===dVerb&&cur.tense===t[0]&&cur.form===f[0];
    return `<td class="${v?"done":""} ${isCur?"cur":""}">${v?"✓ "+esc(v):(isCur?"← сейчас":"")}</td>`}).join("")}</tr>`});
